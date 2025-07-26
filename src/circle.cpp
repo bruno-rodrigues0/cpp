@@ -19,36 +19,36 @@ void process_input(GLFWwindow *window);
 using namespace std;
 
 // Shaders Sources
-const char *vertexShaderSource = R"glsl(
+const char *vertexShaderSource { R"glsl(
   #version 460 core 
   layout (location = 0) in vec3 aPos;
   void main(){
     gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
   }
-)glsl";
+)glsl" };
 
-const char *fragmentShaderSource = R"glsl(
+const char *fragmentShaderSource { R"glsl(
   #version 460 core 
   out vec4 FragColor;
   void main(){
     FragColor = vec4(1.0f, 0.4f, 0.5f, 1.0f);
   } 
-)glsl";
+)glsl" };
 
 vector<glm::vec3> vertices;
 
 int main() { 
   cout << "Initializing..." << endl;
 
-  GLFWwindow *window = StartWindow();
+  GLFWwindow *window { StartWindow() };
 
   buildCircle(0.5f, 8);
 
-  int vertexCount = vertices.size();
+  long unsigned int vertexCount { vertices.size() };
 
   GLuint VAO, VBO;
 
-  GLuint shaderProgram = CreateShaders(vertexShaderSource, fragmentShaderSource);
+  GLuint shaderProgram { CreateShaders(vertexShaderSource, fragmentShaderSource) };
   CreateGLO(VAO, VBO, vertices.data(), vertexCount);
 
   while (!glfwWindowShouldClose(window)){
@@ -85,7 +85,7 @@ GLFWwindow *StartWindow(){
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  GLFWwindow *window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "~", NULL, NULL);
+  GLFWwindow *window { glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "~", NULL, NULL) };
   glfwMakeContextCurrent(window);
 
   glewExperimental = GL_TRUE;
@@ -100,9 +100,9 @@ GLFWwindow *StartWindow(){
 }
 
 GLuint CreateShaders(const char *vertexShaderSource, const char *fragmentShaderSource){
-  GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  GLuint shaderProgram = glCreateProgram();
+  GLuint vertexShader   { glCreateShader(GL_VERTEX_SHADER) };
+  GLuint fragmentShader { glCreateShader(GL_FRAGMENT_SHADER) };
+  GLuint shaderProgram  { glCreateProgram() };
   GLint success;
 
   glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
@@ -158,23 +158,23 @@ void CreateGLO(GLuint &VAO, GLuint &VBO, const glm::vec3 *vertices, size_t verte
 }
 
 void buildCircle(const float radius, const int vertexCount){
-  const float angle = 360.0f / vertexCount;
+  const float angle { 360.0f / vertexCount };
 
-  const int triangleCount = vertexCount -2;
+  const int triangleCount { vertexCount -2 };
 
   vector<glm::vec3> temp;
 
-  for (int i = 0; i < vertexCount; i++){
-    float currentAngle = i * angle;
-    float x = radius * cos(glm::radians(currentAngle));
-    float y = radius * sin(glm::radians(currentAngle));
-    float z = 0.0f;
+  for (int i { 0 }; i < vertexCount; i++){
+    float currentAngle { i * angle };
+    float x { radius * cos(glm::radians(currentAngle)) };
+    float y { radius * sin(glm::radians(currentAngle)) };
+    float z { 0.0f };
 
 
     temp.push_back(glm::vec3(x, y, z));
   }
 
-  for (int i = 0; i < triangleCount; i++){
+  for (int i { 0 }; i < triangleCount; i++){
     vertices.push_back(temp[0]);
     vertices.push_back(temp[i + 1]);
     vertices.push_back(temp[i + 2]);
