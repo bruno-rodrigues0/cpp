@@ -11,13 +11,13 @@ using namespace std;
 GLFWwindow *StartGLU();
 GLuint CreateShaderProgram(const char *vertexSource,
                            const char *fragmentSource);
-void CreateVBOVAO(GLuint &VAO, GLuint &VBO, GLuint &EBO,
-                  const float *vertices, const int *indices,
-                  size_t vertexCount, size_t indexCount);
+void CreateVBOVAO(GLuint &VAO, GLuint &VBO, GLuint &EBO, const float *vertices,
+                  const int *indices, size_t vertexCount, size_t indexCount);
+void CreateTexture(unsigned int texture, const char *image_path);
 void process_input(GLFWwindow *window);
 
 const char *vertexShaderSource = R"glsl(
-  #version 330 core
+  #version 460 core
   layout (location = 0) in vec3 aPos;
   layout (location = 1) in vec3 aColor;
   layout (location = 2) in vec2 aTexCoord;
@@ -34,7 +34,7 @@ const char *vertexShaderSource = R"glsl(
 )glsl";
 
 const char *fragShaderSource = R"glsl(
-  #version 330 core
+  #version 460 core
   out vec4 FragColor;
     
   in vec3 ourColor;
@@ -44,7 +44,7 @@ const char *fragShaderSource = R"glsl(
 
   void main()
   {
-      FragColor = texture(ourTexture, TexCoord);
+      FragColor = texture(ourTexture, TexCoord) * vec4(ourColor, 1.0);
   }
 )glsl";
 
@@ -54,38 +54,17 @@ int main() {
       CreateShaderProgram(vertexShaderSource, fragShaderSource);
 
   vector<float> vertices = {
-     0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-     0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+      0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top right
+      0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom right
+      -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom left
+      -0.5f, 0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f  // top left
   };
 
   vector<int> indices = {0, 1, 3, 1, 2, 3};
 
   // Texture
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-
-  int width, height, nrChannels;
-  unsigned char *data { stbi_load("container.jpg", &width, &height, &nrChannels, 0) };
-
   unsigned int texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-
-  if (data)
-  {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-      glGenerateMipmap(GL_TEXTURE_2D);
-  }
-  else
-  {
-      std::cout << "Failed to load texture" << std::endl;
-  }
-  stbi_image_free(data);
+  CreateTexture(texture, "cont.png");  
 
   int vertexCount = vertices.size();
   int indexCount = indices.size();
@@ -151,9 +130,8 @@ void process_input(GLFWwindow *window) {
   }
 }
 
-void CreateVBOVAO(GLuint &VAO, GLuint &VBO, GLuint &EBO,
-                  const float *vertices, const int *indices,
-                  size_t vertexCount, size_t indexCount) {
+void CreateVBOVAO(GLuint &VAO, GLuint &VBO, GLuint &EBO, const float *vertices,
+                  const int *indices, size_t vertexCount, size_t indexCount) {
   glGenVertexArrays(1, &VAO);
   glBindVertexArray(VAO);
 
@@ -167,17 +145,15 @@ void CreateVBOVAO(GLuint &VAO, GLuint &VBO, GLuint &EBO,
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(int), indices,
                GL_STATIC_DRAW);
 
-  // Posição (location = 0)
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(0);
-
-  // Cor (location = 1)
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  // Coordenadas de textura (location = 2)
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
-  glEnableVertexAttribArray(2);
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    // texture coord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 }
 
 GLuint CreateShaderProgram(const char *vertexSource,
@@ -222,4 +198,30 @@ GLuint CreateShaderProgram(const char *vertexSource,
   glDeleteShader(fragShader);
 
   return shaderProgram;
+}
+
+void CreateTexture(unsigned int &texture, const char *image_path){
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                  GL_NEAREST_MIPMAP_LINEAR);
+
+  int width, height, nrChannels;
+  unsigned char *data{
+          stbi_load(image_path, &width, &height, &nrChannels, 0)};
+
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+  if (data) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                 GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  } else {
+    std::cout << "Failed to load texture" << std::endl;
+  }
+  stbi_image_free(data);
 }
