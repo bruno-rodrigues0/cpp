@@ -1,4 +1,5 @@
 
+#include "utils/camera.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -16,7 +17,7 @@ void CreateVBOVAO(GLuint &VAO, GLuint &VBO, GLuint &EBO, const float *vertices,
                   const int *indices, size_t vertexCount, size_t indexCount);
 void CreateTexture(unsigned int &texture, const char *image_path);
 void process_input(GLFWwindow *window);
-void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void mouse_callback(GLFWwindow *window, double xoffset, double yoffset);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 const char *vertexShaderSource = R"glsl(
@@ -51,12 +52,9 @@ const char *fragShaderSource = R"glsl(
   }
 )glsl";
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+Camera *camera = new Camera();
 
 float deltaTime{0.0f}, lastFrame{0.0f};
-float yaw{-90.0f}, pitch{0.0f}, fov{45.0f};
 float lastX{400}, lastY{400};
 bool firstMouse;
 
@@ -122,17 +120,9 @@ int main() {
     glm::mat4 view{glm::mat4(1.0f)};
     glm::mat4 projection{glm::mat4(1.0f)};
 
-    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 cameraDirection = glm::normalize((cameraPos - cameraTarget));
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
-
-    const float radius = 10.0f;
-    float camX = sin(glfwGetTime()) * radius;
-    float camZ = cos(glfwGetTime()) * radius;
-    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-    projection =
-        glm::perspective(glm::radians(fov), 800.0f / 800.0f, 0.1f, 100.0f);
+    view = camera->GetViewMatrix();
+    projection = glm::perspective(glm::radians(camera->Zoom), 800.0f / 800.0f,
+                                  0.1f, 100.0f);
 
     int viewLoc = glGetUniformLocation(shaderProgram, "view");
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
@@ -209,20 +199,17 @@ void process_input(GLFWwindow *window) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
   }
-
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    cameraPos += cameraSpeed * cameraFront;
+    camera->ProcessKeyboard(FORWARD, deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    cameraPos -= cameraSpeed * cameraFront;
+    camera->ProcessKeyboard(BACKWARD, deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    cameraPos -=
-        glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    camera->ProcessKeyboard(LEFT, deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    cameraPos +=
-        glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    camera->ProcessKeyboard(RIGHT, deltaTime);
   }
 }
 
@@ -320,40 +307,9 @@ void CreateTexture(unsigned int &texture, const char *image_path) {
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
-  if (firstMouse) {
-    lastX = xpos;
-    lastY = ypos;
-    firstMouse = false;
-  }
-
-  float xoffset = xpos - lastX;
-  float yoffset = lastY - ypos;
-  lastX = xpos;
-  lastY = ypos;
-
-  const float sensitivity = 0.05f;
-  xoffset *= sensitivity;
-  yoffset *= sensitivity;
-
-  yaw += xoffset;
-  pitch += yoffset;
-
-  if (pitch > 89.0f)
-    pitch = 89.0f;
-  if (pitch < -89.0f)
-    pitch = -89.0f;
-
-  glm::vec3 direction;
-  direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-  direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-  direction.y = sin(glm::radians(pitch));
-  cameraFront = glm::normalize(direction);
+  camera->ProcessMouseMovement(xpos, ypos);
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-  fov -= (float)yoffset;
-  if (fov < 1.0f)
-    fov = 1.0f;
-  if (fov > 45.0f)
-    fov = 45.0f;
+  camera->ProcessMouseScroll((float)yoffset);
 }

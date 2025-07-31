@@ -3,24 +3,17 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-Window::Window(char *title, unsigned int width, unsigned int height)
-    : Title(title), Width(width), Height(height) {
-  window = StartWindow();
-}
-
-GLFWwindow *Window::StartWindow() {
+GLFWwindow *StartWindow() {
   if (!glfwInit()) {
-    std::cerr << "Failed to initialize GLFW" << std::endl;
+    std::cout << "Failed to initialize GLFW, panic" << std::endl;
+    return nullptr;
   }
-
-  GLFWwindow *window =
-      glfwCreateWindow(Width, Height, Title.data(), NULL, NULL);
+  GLFWwindow *window = glfwCreateWindow(800, 800, "~", NULL, NULL);
   if (!window) {
-    std::cerr << "Failed to create a window" << std::endl;
+    std::cerr << "Failed to create a GLFW window." << std::endl;
     glfwTerminate();
     return nullptr;
   }
-
   glfwMakeContextCurrent(window);
 
   glewExperimental = GL_TRUE;
