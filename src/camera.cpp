@@ -1,16 +1,11 @@
-
 #include "utils/camera.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "utils/window.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <vector>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-GLFWwindow *StartGLU();
 GLuint CreateShaderProgram(const char *vertexSource,
                            const char *fragmentSource);
 void CreateVBOVAO(GLuint &VAO, GLuint &VBO, GLuint &EBO, const float *vertices,
@@ -59,7 +54,7 @@ float lastX{400}, lastY{400};
 bool firstMouse;
 
 int main() {
-  GLFWwindow *window = StartGLU();
+  GLFWwindow *window = StartWindow();
   GLuint shaderProgram =
       CreateShaderProgram(vertexShaderSource, fragShaderSource);
 
@@ -164,37 +159,10 @@ int main() {
   return 0;
 }
 
-GLFWwindow *StartGLU() {
-  if (!glfwInit()) {
-    std::cout << "Failed to initialize GLFW, panic" << std::endl;
-    return nullptr;
-  }
-  GLFWwindow *window = glfwCreateWindow(800, 800, "~", NULL, NULL);
-  if (!window) {
-    std::cerr << "Failed to create a GLFW window." << std::endl;
-    glfwTerminate();
-    return nullptr;
-  }
-  glfwMakeContextCurrent(window);
-
-  glewExperimental = GL_TRUE;
-  if (glewInit() != GLEW_OK) {
-    std::cerr << "Failed to initialize GLEW" << std::endl;
-    glfwTerminate();
-    return nullptr;
-  }
-
-  glEnable(GL_DEPTH_TEST);
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-  return window;
-}
-
 void process_input(GLFWwindow *window) {
   float currentFrame = glfwGetTime();
   deltaTime = currentFrame - lastFrame;
   lastFrame = currentFrame;
-  const float cameraSpeed = 2.5f * deltaTime;
 
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
